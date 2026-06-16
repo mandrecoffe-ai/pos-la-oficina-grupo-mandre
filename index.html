@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Oficina Grupo Mandre • POS</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <header>
+    <h1>La Oficina</h1>
+    <div class="header-right">
+      <button onclick="toggleAdmin()" class="admin-btn">⚙️ Admin</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- Floor Plan -->
+    <div class="floor-plan">
+      <h2>Salón</h2>
+      <div id="floor" class="floor"></div>
+    </div>
+
+    <!-- Admin Panel (oculto por defecto) -->
+    <div id="admin-panel" class="admin-panel hidden">
+      <h2>Gestión de Productos</h2>
+      <input type="text" id="prod-name" placeholder="Nombre del producto">
+      <input type="number" id="prod-price" placeholder="Precio" step="0.01">
+      <input type="number" id="prod-stock" placeholder="Stock" value="50">
+      <button onclick="guardarProducto()">Guardar Producto</button>
+      
+      <h3>Productos Actuales</h3>
+      <div id="admin-products-list"></div>
+    </div>
+  </div>
+
+  <!-- Modal Pedido -->
+  <div id="order-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Mesa <span id="modal-table-name"></span></h2>
+        <button onclick="closeOrderModal()" class="close-btn">✕</button>
+      </div>
+      
+      <div class="products-grid" id="products-grid"></div>
+      
+      <div class="order-summary">
+        <h3>Pedido Actual</h3>
+        <ul id="order-list"></ul>
+        <div class="total">Total: $<span id="total-amount">0.00</span></div>
+      </div>
+
+      <div class="modal-actions">
+        <button onclick="limpiarPedido()" class="secondary">Limpiar</button>
+        <button onclick="cerrarMesa()" class="primary">Cerrar Mesa • Facturar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
