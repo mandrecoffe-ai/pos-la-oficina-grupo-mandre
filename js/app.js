@@ -11,46 +11,66 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// ==================== VARIABLES GLOBALES ====================
 let currentTable = null;
 let order = [];
 let tables = [];
 
 // ==================== INICIALIZAR MESAS ====================
 async function initTables() {
-  const snapshot = await db.collection("mesas").get();
-  
-  if (snapshot.empty) {
-    // Crear mesas iniciales
+  console.log("🔄 Intentando cargar mesas...");
+
+  try {
+    const snapshot = await db.collection("mesas").get();
+    console.log("📊 Documentos encontrados:", snapshot.size);
+
+    if (snapshot.empty) {
+      console.log("🆕 No hay mesas guardadas, creando iniciales...");
+      tables = [
+        { id: "T1", x: 100, y: 100, status: "libre" },
+        { id: "T2", x: 220, y: 100, status: "libre" },
+        { id: "T3", x: 340, y: 100, status: "libre" },
+        { id: "T4", x: 100, y: 230, status: "libre" },
+        { id: "T5", x: 220, y: 230, status: "libre" },
+        { id: "T6", x: 340, y: 230, status: "libre" },
+        { id: "I1", x: 500, y: 150, status: "libre" },
+        { id: "I2", x: 500, y: 280, status: "libre" },
+        { id: "I3", x: 500, y: 410, status: "libre" },
+        { id: "B1", x: 700, y: 150, status: "libre" },
+        { id: "B2", x: 700, y: 280, status: "libre" },
+        { id: "B3", x: 700, y: 410, status: "libre" }
+      ];
+
+      for (const table of tables) {
+        await db.collection("mesas").doc(table.id).set(table);
+      }
+    } else {
+      tables = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+
+    console.log("✅ Mesas cargadas:", tables.length);
+    renderTables();
+  } catch (error) {
+    console.error("❌ Error al cargar mesas:", error);
+    alert("Error de Firebase: " + error.message + "\n\nRevisa la consola (F12)");
+    
+    // Fallback local si Firebase falla
     tables = [
-      { id: "T1", section: "terraza", x: 100, y: 100, status: "libre" },
-      { id: "T2", section: "terraza", x: 220, y: 100, status: "libre" },
-      { id: "T3", section: "terraza", x: 340, y: 100, status: "libre" },
-      { id: "T4", section: "terraza", x: 100, y: 230, status: "libre" },
-      { id: "T5", section: "terraza", x: 220, y: 230, status: "libre" },
-      { id: "T6", section: "terraza", x: 340, y: 230, status: "libre" },
-      { id: "I1", section: "interior", x: 500, y: 150, status: "libre" },
-      { id: "I2", section: "interior", x: 500, y: 280, status: "libre" },
-      { id: "I3", section: "interior", x: 500, y: 410, status: "libre" },
-      { id: "B1", section: "barra",   x: 700, y: 150, status: "libre" },
-      { id: "B2", section: "barra",   x: 700, y: 280, status: "libre" },
-      { id: "B3", section: "barra",   x: 700, y: 410, status: "libre" }
+      { id: "T1", x: 100, y: 100, status: "libre" },
+      { id: "T2", x: 220, y: 100, status: "libre" },
+      // ... (puedes agregar más)
     ];
-    tables.forEach(table => saveTablePosition(table));
-  } else {
-    tables = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderTables();
   }
-  renderTables();
 }
 
-// Guardar posición de una mesa
-async function saveTablePosition(table) {
-  await db.collection("mesas").doc(table.id).set(table, { merge: true });
-}
-
-// ==================== RENDER MESAS CON DRAG & DROP ====================
+// ==================== RENDER MESAS ====================
 function renderTables() {
   const floor = document.getElementById("floor");
+  if (!floor) {
+    console.error("❌ No se encontró el elemento #floor");
+    return;
+  }
+
   floor.innerHTML = '';
 
   tables.forEach(table => {
@@ -61,46 +81,37 @@ function renderTables() {
     div.style.top = `${table.y}px`;
     div.draggable = true;
 
-    // Drag & Drop
     div.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", table.id);
     });
 
-    // Click para abrir pedido
     div.addEventListener("click", () => openOrderModal(table));
 
     floor.appendChild(div);
   });
 
-  // Drop zone
-  floor.addEventListener("dragover", (e) => e.preventDefault());
-  floor.addEventListener("drop", (e) => {
+  // Drop
+  floor.ondragover = (e) => e.preventDefault();
+  floor.ondrop = (e) => {
     e.preventDefault();
     const tableId = e.dataTransfer.getData("text/plain");
     const table = tables.find(t => t.id === tableId);
-    
-    if (table) {
-      const rect = floor.getBoundingClientRect();
-      table.x = e.clientX - rect.left - 40;
-      table.y = e.clientY - rect.top - 40;
-      
-      // Limitar dentro del área
-      table.x = Math.max(20, Math.min(table.x, rect.width - 100));
-      table.y = Math.max(20, Math.min(table.y, rect.height - 100));
-      
-      saveTablePosition(table);
-      renderTables();
-    }
-  });
+    if (!table) return;
+
+    const rect = floor.getBoundingClientRect();
+    table.x = Math.max(20, Math.min(e.clientX - rect.left - 40, rect.width - 100));
+    table.y = Math.max(20, Math.min(e.clientY - rect.top - 40, rect.height - 100));
+
+    db.collection("mesas").doc(table.id).update({ x: table.x, y: table.y });
+    renderTables();
+  };
 }
 
-// ==================== MODAL DE PEDIDO ====================
+// ==================== MODAL ====================
 function openOrderModal(table) {
   currentTable = table;
   document.getElementById("modal-table-name").textContent = table.id;
   document.getElementById("order-modal").classList.remove("hidden");
-  
-  order = []; // Aquí luego cargarías pedido guardado
   renderProductsInModal();
   renderOrder();
 }
@@ -110,33 +121,39 @@ function closeOrderModal() {
   currentTable = null;
 }
 
-// ==================== PRODUCTOS EN MODAL ====================
+// ==================== PRODUCTOS ====================
 async function renderProductsInModal() {
   const grid = document.getElementById("products-grid");
-  grid.innerHTML = '';
+  grid.innerHTML = '<p>Cargando productos...</p>';
 
-  const snapshot = await db.collection("productos").get();
-  
-  snapshot.forEach(doc => {
-    const p = doc.data();
-    const div = document.createElement("div");
-    div.className = "product-card";
-    div.innerHTML = `
-      <strong>${p.nombre}</strong><br>
-      <span>$${p.precio}</span>
-    `;
-    div.onclick = () => agregarAlPedido(doc.id, p.nombre, p.precio);
-    grid.appendChild(div);
-  });
+  try {
+    const snapshot = await db.collection("productos").get();
+    grid.innerHTML = '';
+
+    if (snapshot.empty) {
+      grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;">No hay productos. Agrega desde Admin.</p>';
+      return;
+    }
+
+    snapshot.forEach(doc => {
+      const p = doc.data();
+      const div = document.createElement("div");
+      div.className = "product-card";
+      div.innerHTML = `<strong>${p.nombre}</strong><br>$${p.precio}`;
+      div.onclick = () => agregarAlPedido(doc.id, p.nombre, p.precio);
+      grid.appendChild(div);
+    });
+  } catch (e) {
+    console.error(e);
+    grid.innerHTML = '<p>Error al cargar productos</p>';
+  }
 }
 
+// Resto de funciones (agregarAlPedido, renderOrder, etc.)
 function agregarAlPedido(id, nombre, precio) {
   const existing = order.find(item => item.id === id);
-  if (existing) {
-    existing.cantidad++;
-  } else {
-    order.push({ id, nombre, precio, cantidad: 1 });
-  }
+  if (existing) existing.cantidad++;
+  else order.push({ id, nombre, precio, cantidad: 1 });
   renderOrder();
 }
 
@@ -145,15 +162,12 @@ function renderOrder() {
   ul.innerHTML = '';
   let total = 0;
 
-  order.forEach((item, index) => {
+  order.forEach((item, i) => {
     total += item.precio * item.cantidad;
     const li = document.createElement("li");
-    li.innerHTML = `
-      ${item.nombre} ×${item.cantidad} 
-      <span>$${(item.precio * item.cantidad).toFixed(2)}</span>
-      <button onclick="cambiarCantidad(${index}, 1)">+</button>
-      <button onclick="cambiarCantidad(${index}, -1)">-</button>
-    `;
+    li.innerHTML = `${item.nombre} ×${item.cantidad} <span>$${(item.precio*item.cantidad).toFixed(2)}</span>
+      <button onclick="cambiarCantidad(${i},1)">+</button>
+      <button onclick="cambiarCantidad(${i},-1)">-</button>`;
     ul.appendChild(li);
   });
 
@@ -162,66 +176,47 @@ function renderOrder() {
 
 window.cambiarCantidad = (index, delta) => {
   order[index].cantidad += delta;
-  if (order[index].cantidad < 1) order.splice(index, 1);
+  if (order[index].cantidad < 1) order.splice(index,1);
   renderOrder();
 };
 
-// ==================== ACCIONES DE PEDIDO ====================
-window.limpiarPedido = () => {
-  order = [];
-  renderOrder();
-};
+window.limpiarPedido = () => { order = []; renderOrder(); };
 
 async function cerrarMesa() {
-  if (!currentTable || order.length === 0) {
-    alert("No hay pedido para cerrar");
-    return;
-  }
-
-  const total = order.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
-
+  if (!currentTable || order.length === 0) return alert("No hay pedido");
+  
+  const total = order.reduce((a, b) => a + b.precio * b.cantidad, 0);
+  
   await db.collection("ventas").add({
     mesa: currentTable.id,
     fecha: firebase.firestore.Timestamp.now(),
-    total: total,
-    items: order,
-    estado: "cerrada"
+    total,
+    items: order
   });
 
-  // Marcar mesa como libre
-  currentTable.status = "libre";
-  await saveTablePosition(currentTable);
-
-  alert(`✅ Mesa ${currentTable.id} cerrada correctamente.\nTotal: $${total.toFixed(2)}`);
-  
+  alert(`Mesa ${currentTable.id} cerrada - Total: $${total.toFixed(2)}`);
   closeOrderModal();
   renderTables();
 }
 
-// ==================== PANEL ADMIN ====================
 function toggleAdmin() {
-  const panel = document.getElementById("admin-panel");
-  panel.classList.toggle("hidden");
+  document.getElementById("admin-panel").classList.toggle("hidden");
 }
 
 async function guardarProducto() {
   const nombre = document.getElementById("prod-name").value.trim();
   const precio = parseFloat(document.getElementById("prod-price").value);
-  const stock = parseInt(document.getElementById("prod-stock").value) || 50;
 
-  if (!nombre || !precio) {
-    alert("Por favor completa nombre y precio");
-    return;
-  }
+  if (!nombre || !precio) return alert("Nombre y precio son obligatorios");
 
-  await db.collection("productos").add({ nombre, precio, stock });
-  
-  alert("Producto guardado correctamente");
-  document.getElementById("prod-name").value = '';
-  document.getElementById("prod-price").value = '';
+  await db.collection("productos").add({ nombre, precio, stock: 50 });
+  alert("Producto guardado");
+  document.getElementById("prod-name").value = "";
+  document.getElementById("prod-price").value = "";
 }
 
 // ==================== INICIO ====================
 window.onload = () => {
+  console.log("🚀 POS La Oficina Grupo Mandre iniciado");
   initTables();
 };
