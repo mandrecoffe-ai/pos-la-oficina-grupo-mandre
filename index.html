@@ -4,60 +4,276 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>La Oficina Grupo Mandre • POS</title>
-  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .table {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .table:hover {
+      transform: scale(1.08) rotate(2deg);
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+    .modal {
+      animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.7) translateY(40px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+  </style>
 </head>
-<body>
-  <header>
-    <h1>La Oficina Grupo Mandre</h1>
-    <button onclick="toggleAdmin()" class="admin-btn">⚙️ Admin</button>
-  </header>
+<body class="bg-[#F5F5F0] text-gray-900">
 
-  <div class="main">
-    <!-- Plano de Mesas -->
-    <div class="floor-plan">
-      <h2>Salón</h2>
-      <div id="floor" class="floor"></div>
-    </div>
-
-    <!-- Panel Admin -->
-    <div id="admin-panel" class="admin-panel hidden">
-      <h2>Gestión de Productos</h2>
-      <input type="text" id="prod-name" placeholder="Nombre del producto">
-      <input type="number" id="prod-price" placeholder="Precio" step="100">
-      <button onclick="guardarProducto()">Guardar Producto</button>
-      <hr>
-      <h3>Productos</h3>
-      <div id="admin-products-list"></div>
-    </div>
-  </div>
-
-  <!-- Modal Pedido -->
-  <div id="order-modal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Mesa <span id="modal-table-name"></span></h2>
-        <button onclick="closeOrderModal()" class="close-btn">✕</button>
+  <div class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-[#3E2723] text-white py-4 px-6 flex justify-between items-center shadow-lg">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-[#8FBC8F] rounded-2xl flex items-center justify-center text-xl">☕</div>
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">LA OFICINA</h1>
+          <p class="text-xs text-[#8FBC8F] -mt-1">Grupo Mandre</p>
+        </div>
       </div>
+      <button onclick="toggleAdmin()" class="bg-white/10 hover:bg-white/20 px-5 py-2 rounded-2xl text-sm font-medium transition">
+        ⚙️ Admin
+      </button>
+    </header>
 
-      <div class="products-grid" id="products-grid"></div>
+    <div class="p-6">
+      <!-- Zonas -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- TERRAZA -->
+        <div>
+          <h2 class="text-lg font-semibold mb-4 flex items-center gap-2 text-emerald-700">
+            <span class="w-3 h-3 bg-emerald-500 rounded-full"></span> TERRAZA (6 mesas)
+          </h2>
+          <div id="terraza" class="grid grid-cols-3 gap-4"></div>
+        </div>
 
-      <div class="order-summary">
-        <h3>Pedido Actual</h3>
-        <ul id="order-list"></ul>
-        <div class="total">Total: $<span id="total-amount">0</span></div>
-      </div>
+        <!-- INTERIOR -->
+        <div>
+          <h2 class="text-lg font-semibold mb-4 flex items-center gap-2 text-amber-700">
+            <span class="w-3 h-3 bg-amber-500 rounded-full"></span> INTERIOR (3 mesas)
+          </h2>
+          <div id="interior" class="grid grid-cols-3 gap-4"></div>
+        </div>
 
-      <div class="modal-actions">
-        <button onclick="limpiarPedido()" class="secondary">Limpiar</button>
-        <button onclick="cerrarMesa('Efectivo')" class="primary">💵 Efectivo</button>
-        <button onclick="cerrarMesa('QR')" class="primary">📱 QR</button>
-        <button onclick="cerrarMesa('Datafono')" class="primary">💳 Datafono</button>
+        <!-- BARRA -->
+        <div>
+          <h2 class="text-lg font-semibold mb-4 flex items-center gap-2 text-rose-700">
+            <span class="w-3 h-3 bg-rose-500 rounded-full"></span> BARRA (3 mesas)
+          </h2>
+          <div id="barra" class="grid grid-cols-3 gap-4"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <script src="js/app.js"></script>
+  <!-- MODAL PEDIDO -->
+  <div id="order-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 modal">
+    <div class="bg-white w-full max-w-2xl mx-4 rounded-3xl shadow-2xl overflow-hidden">
+      <div class="bg-[#3E2723] text-white p-6 flex justify-between items-center">
+        <h2 class="text-2xl font-bold">Mesa <span id="modal-table" class="text-[#8FBC8F]"></span></h2>
+        <button onclick="closeModal()" class="text-3xl leading-none hover:text-gray-300">×</button>
+      </div>
+
+      <div class="p-6">
+        <!-- Productos -->
+        <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8"></div>
+
+        <!-- Pedido Actual -->
+        <div class="bg-gray-50 rounded-2xl p-5">
+          <h3 class="font-semibold mb-3">Pedido Actual</h3>
+          <ul id="order-list" class="space-y-2 min-h-[120px]"></ul>
+          <div class="text-right mt-4 text-2xl font-bold text-[#3E2723]">
+            Total: $<span id="total-amount">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 border-t flex gap-3">
+        <button onclick="limpiarPedido()" class="flex-1 py-4 border border-gray-300 rounded-2xl font-medium">Limpiar</button>
+        <button onclick="cerrarMesa('Efectivo')" class="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-semibold">💵 Efectivo</button>
+        <button onclick="cerrarMesa('QR')" class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-semibold">📱 QR</button>
+        <button onclick="cerrarMesa('Datafono')" class="flex-1 py-4 bg-purple-600 text-white rounded-2xl font-semibold">💳 Datafono</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="admin-panel" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center">
+    <div class="bg-white rounded-3xl p-8 w-full max-w-md">
+      <h2 class="text-2xl font-bold mb-6">Gestión de Productos</h2>
+      <input id="prod-name" type="text" placeholder="Nombre del producto" class="w-full p-4 border rounded-2xl mb-3">
+      <input id="prod-price" type="number" placeholder="Precio" class="w-full p-4 border rounded-2xl mb-6">
+      <button onclick="guardarProducto()" class="w-full py-4 bg-[#3E2723] text-white rounded-2xl font-semibold">Guardar Producto</button>
+      <button onclick="toggleAdmin()" class="w-full mt-3 py-4 border rounded-2xl">Cerrar</button>
+    </div>
+  </div>
+
+  <script>
+    // ==================== FIREBASE ====================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBzsRQKBh-_P_S8s-4n5qTPYFGbiM_T6OY",
+      authDomain: "la-oficina-grupo-mandre.firebaseapp.com",
+      projectId: "la-oficina-grupo-mandre",
+      storageBucket: "la-oficina-grupo-mandre.firebasestorage.app",
+      messagingSenderId: "839406353836",
+      appId: "1:839406353836:web:c7df84a66f37ab28e7ce09"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let currentTable = null;
+    let order = [];
+
+    // ==================== INICIALIZAR MESAS ====================
+    async function initTables() {
+      const snapshot = await db.collection("tables").get();
+      let tablesData = [];
+
+      if (snapshot.empty) {
+        const initialTables = [
+          ...Array.from({length:6}, (_,i) => ({id: `T${i+1}`, zone: "terraza", status: "libre", total: 0})),
+          ...Array.from({length:3}, (_,i) => ({id: `I${i+1}`, zone: "interior", status: "libre", total: 0})),
+          ...Array.from({length:3}, (_,i) => ({id: `B${i+1}`, zone: "barra",   status: "libre", total: 0}))
+        ];
+        for (let t of initialTables) {
+          await db.collection("tables").doc(t.id).set(t);
+        }
+        tablesData = initialTables;
+      } else {
+        tablesData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+      }
+
+      renderAllTables(tablesData);
+    }
+
+    function renderAllTables(tables) {
+      const zones = { terraza: document.getElementById('terraza'), interior: document.getElementById('interior'), barra: document.getElementById('barra') };
+      Object.keys(zones).forEach(zone => zones[zone].innerHTML = '');
+
+      tables.forEach(table => {
+        const div = document.createElement('div');
+        div.className = `table aspect-square rounded-3xl flex flex-col items-center justify-center cursor-pointer shadow-md border-4 ${table.status === 'libre' ? 'bg-white border-emerald-200 hover:border-emerald-400' : 'bg-red-600 text-white border-red-700'}`;
+        
+        div.innerHTML = `
+          <span class="text-5xl font-bold">${table.id}</span>
+          ${table.total > 0 ? `<span class="text-sm mt-1">$${table.total}</span>` : ''}
+        `;
+        
+        div.onclick = () => openTable(table);
+        zones[table.zone].appendChild(div);
+      });
+    }
+
+    async function openTable(table) {
+      currentTable = table;
+      document.getElementById('modal-table').textContent = table.id;
+      document.getElementById('order-modal').classList.remove('hidden');
+      order = [];
+      renderProducts();
+      renderOrder();
+    }
+
+    function closeModal() {
+      document.getElementById('order-modal').classList.add('hidden');
+    }
+
+    // ==================== PRODUCTOS ====================
+    async function renderProducts() {
+      const grid = document.getElementById('products-grid');
+      grid.innerHTML = '';
+      const snap = await db.collection("productos").get();
+      
+      snap.forEach(doc => {
+        const p = doc.data();
+        const card = document.createElement('div');
+        card.className = "bg-white border border-gray-200 rounded-2xl p-4 text-center cursor-pointer hover:border-[#3E2723] transition";
+        card.innerHTML = `<p class="font-semibold">${p.nombre}</p><p class="text-lg font-bold text-[#3E2723]">$${p.precio}</p>`;
+        card.onclick = () => addToOrder(doc.id, p.nombre, p.precio);
+        grid.appendChild(card);
+      });
+    }
+
+    function addToOrder(id, nombre, precio) {
+      const existing = order.find(item => item.id === id);
+      if (existing) existing.cantidad++;
+      else order.push({id, nombre, precio, cantidad: 1});
+      renderOrder();
+    }
+
+    function renderOrder() {
+      const list = document.getElementById('order-list');
+      list.innerHTML = '';
+      let total = 0;
+
+      order.forEach((item, index) => {
+        total += item.precio * item.cantidad;
+        const li = document.createElement('li');
+        li.className = "flex justify-between items-center bg-white p-3 rounded-xl";
+        li.innerHTML = `
+          <span>${item.nombre} ×${item.cantidad}</span>
+          <span class="font-semibold">$${(item.precio * item.cantidad).toFixed(0)}</span>
+        `;
+        list.appendChild(li);
+      });
+
+      document.getElementById('total-amount').textContent = total.toFixed(0);
+    }
+
+    window.limpiarPedido = () => {
+      order = [];
+      renderOrder();
+    };
+
+    async function cerrarMesa(metodo) {
+      if (order.length === 0) return alert("Agrega productos");
+      
+      const total = order.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
+
+      await db.collection("ventas").add({
+        mesa: currentTable.id,
+        fecha: new Date(),
+        total: total,
+        metodo: metodo,
+        items: order
+      });
+
+      await db.collection("tables").doc(currentTable.id).update({
+        status: "libre",
+        total: 0
+      });
+
+      alert(`Mesa ${currentTable.id} cerrada por ${metodo} - Total: $${total}`);
+      closeModal();
+      initTables();
+    }
+
+    function toggleAdmin() {
+      document.getElementById('admin-panel').classList.toggle('hidden');
+    }
+
+    async function guardarProducto() {
+      const nombre = document.getElementById('prod-name').value;
+      const precio = parseFloat(document.getElementById('prod-price').value);
+      if (!nombre || !precio) return alert("Completa los campos");
+      
+      await db.collection("productos").add({ nombre, precio });
+      alert("Producto guardado");
+      document.getElementById('prod-name').value = '';
+      document.getElementById('prod-price').value = '';
+    }
+
+    // ==================== INICIO ====================
+    window.onload = initTables;
+  </script>
 </body>
 </html>
