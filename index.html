@@ -10,28 +10,25 @@
 </head>
 <body>
   <header>
-    <h1>La Oficina</h1>
-    <div class="header-right">
-      <button onclick="toggleAdmin()" class="admin-btn">⚙️ Admin</button>
-    </div>
+    <h1>La Oficina Grupo Mandre</h1>
+    <button onclick="toggleAdmin()" class="admin-btn">⚙️ Admin</button>
   </header>
 
   <div class="main">
-    <!-- Floor Plan -->
+    <!-- Plano de Mesas -->
     <div class="floor-plan">
       <h2>Salón</h2>
       <div id="floor" class="floor"></div>
     </div>
 
-    <!-- Admin Panel (oculto por defecto) -->
+    <!-- Panel Admin -->
     <div id="admin-panel" class="admin-panel hidden">
       <h2>Gestión de Productos</h2>
       <input type="text" id="prod-name" placeholder="Nombre del producto">
-      <input type="number" id="prod-price" placeholder="Precio" step="0.01">
-      <input type="number" id="prod-stock" placeholder="Stock" value="50">
+      <input type="number" id="prod-price" placeholder="Precio" step="100">
       <button onclick="guardarProducto()">Guardar Producto</button>
-      
-      <h3>Productos Actuales</h3>
+      <hr>
+      <h3>Productos</h3>
       <div id="admin-products-list"></div>
     </div>
   </div>
@@ -43,18 +40,20 @@
         <h2>Mesa <span id="modal-table-name"></span></h2>
         <button onclick="closeOrderModal()" class="close-btn">✕</button>
       </div>
-      
+
       <div class="products-grid" id="products-grid"></div>
-      
+
       <div class="order-summary">
         <h3>Pedido Actual</h3>
         <ul id="order-list"></ul>
-        <div class="total">Total: $<span id="total-amount">0.00</span></div>
+        <div class="total">Total: $<span id="total-amount">0</span></div>
       </div>
 
       <div class="modal-actions">
         <button onclick="limpiarPedido()" class="secondary">Limpiar</button>
-        <button onclick="cerrarMesa()" class="primary">Cerrar Mesa • Facturar</button>
+        <button onclick="cerrarMesa('Efectivo')" class="primary">💵 Efectivo</button>
+        <button onclick="cerrarMesa('QR')" class="primary">📱 QR</button>
+        <button onclick="cerrarMesa('Datafono')" class="primary">💳 Datafono</button>
       </div>
     </div>
   </div>
