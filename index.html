@@ -13,31 +13,31 @@
     body { font-family: 'Inter', sans-serif; background: #F8F1E9; }
     .mesa {
       transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     }
-    .mesa:hover { transform: scale(1.08) rotate(1deg); }
+    .mesa:hover {
+      transform: translateY(-12px) scale(1.08);
+    }
+    .mesa-libre { background: linear-gradient(#E8F5E9, #C8E6C9); border-color: #4ADE80; }
+    .mesa-ocupada { background: linear-gradient(#FEE2E2, #FCA5A5); border-color: #EF4444; }
     .modal { animation: modalPop 0.4s ease-out forwards; }
     @keyframes modalPop {
-      from { opacity: 0; transform: scale(0.75) translateY(50px); }
+      from { opacity: 0; transform: scale(0.8) translateY(40px); }
       to { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    .logo-coffee {
-      font-family: 'Inter', sans-serif;
-      letter-spacing: -4px;
     }
   </style>
 </head>
 <body>
 
-  <!-- HEADER -->
-  <header class="bg-[#3E2723] text-white py-5 px-6 shadow-xl flex justify-between items-center">
+  <header class="bg-[#3E2723] text-white py-5 px-6 flex justify-between items-center shadow-xl">
     <div class="flex items-center gap-3">
       <div class="w-11 h-11 bg-[#8FBC8F] rounded-3xl flex items-center justify-center text-3xl shadow-inner">☕</div>
       <div>
-        <h1 class="text-3xl font-bold tracking-tighter logo-coffee">LA OFICINA</h1>
+        <h1 class="text-3xl font-bold tracking-tighter">LA OFICINA</h1>
         <p class="text-xs text-[#A8C4A8]">Grupo Mandre</p>
       </div>
     </div>
-    <button onclick="toggleAdmin()" class="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-3xl text-sm font-medium transition">⚙️ Admin</button>
+    <button onclick="toggleAdmin()" class="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-3xl text-sm font-medium">⚙️ Admin</button>
   </header>
 
   <div class="max-w-7xl mx-auto p-6">
@@ -45,15 +45,15 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
       <div>
-        <h3 class="text-emerald-700 font-semibold mb-5 flex items-center gap-2">🌳 Terraza</h3>
+        <h3 class="text-emerald-700 font-semibold mb-5">🌳 Terraza</h3>
         <div id="terraza" class="grid grid-cols-3 gap-6"></div>
       </div>
       <div>
-        <h3 class="text-amber-700 font-semibold mb-5 flex items-center gap-2">🏠 Interior</h3>
+        <h3 class="text-amber-700 font-semibold mb-5">🏠 Interior</h3>
         <div id="interior" class="grid grid-cols-3 gap-6"></div>
       </div>
       <div>
-        <h3 class="text-rose-700 font-semibold mb-5 flex items-center gap-2">🍷 Barra</h3>
+        <h3 class="text-rose-700 font-semibold mb-5">🍷 Barra</h3>
         <div id="barra" class="grid grid-cols-3 gap-6"></div>
       </div>
     </div>
@@ -62,7 +62,7 @@
   <!-- MODAL PEDIDO -->
   <div id="order-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 modal">
     <div class="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
-      <div class="bg-[#3E2723] text-white px-8 py-6 flex justify-between items-center">
+      <div class="bg-[#3E2723] text-white px-8 py-6 flex justify-between">
         <div>
           <p class="text-sm opacity-75">Mesa</p>
           <h2 id="modal-table-name" class="text-4xl font-bold"></h2>
@@ -73,13 +73,12 @@
       <div class="flex flex-1 overflow-hidden">
         <!-- Productos -->
         <div class="w-1/2 border-r p-6 overflow-auto bg-gray-50">
-          <input id="product-search" onkeyup="filterProducts()" 
-                 placeholder="Buscar producto..." 
+          <input id="product-search" onkeyup="filterProducts()" placeholder="Buscar producto..." 
                  class="w-full px-5 py-4 border rounded-3xl mb-6 focus:outline-none">
           <div id="products-grid" class="grid grid-cols-2 gap-4"></div>
         </div>
 
-        <!-- Pedido -->
+        <!-- Pedido Actual -->
         <div class="w-1/2 p-6 flex flex-col">
           <h3 class="font-semibold mb-4">Pedido Actual</h3>
           <div id="order-list" class="flex-1 overflow-auto space-y-3"></div>
@@ -91,43 +90,29 @@
         </div>
       </div>
 
-      <!-- Botones Pago -->
-      <div class="p-6 grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 border-t">
-        <button onclick="limpiarPedido()" class="py-5 border border-gray-300 rounded-3xl font-medium hover:bg-gray-100">Limpiar</button>
-        <button onclick="cerrarMesa('Efectivo')" class="py-5 bg-emerald-600 text-white rounded-3xl font-semibold hover:bg-emerald-700">💵 Efectivo</button>
-        <button onclick="cerrarMesa('QR')" class="py-5 bg-blue-600 text-white rounded-3xl font-semibold hover:bg-blue-700">📱 QR</button>
-        <button onclick="cerrarMesa('Datafono')" class="py-5 bg-purple-600 text-white rounded-3xl font-semibold hover:bg-purple-700">💳 Datafono</button>
+      <!-- Botones de Acción -->
+      <div class="p-6 grid grid-cols-2 md:grid-cols-5 gap-3 bg-gray-50 border-t">
+        <button onclick="guardarMesa()" class="py-6 bg-amber-500 text-white rounded-3xl font-semibold hover:bg-amber-600">💾 Guardar Mesa</button>
+        <button onclick="limpiarPedido()" class="py-6 border border-gray-300 rounded-3xl font-medium hover:bg-gray-100">Limpiar</button>
+        <button onclick="cerrarMesa('Efectivo')" class="py-6 bg-emerald-600 text-white rounded-3xl font-semibold hover:bg-emerald-700">💵 Efectivo</button>
+        <button onclick="cerrarMesa('QR')" class="py-6 bg-blue-600 text-white rounded-3xl font-semibold hover:bg-blue-700">📱 QR</button>
+        <button onclick="cerrarMesa('Datafono')" class="py-6 bg-purple-600 text-white rounded-3xl font-semibold hover:bg-purple-700">💳 Datafono</button>
       </div>
     </div>
   </div>
 
   <!-- ADMIN MODAL -->
   <div id="admin-modal" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl p-8 w-full max-w-lg">
-      <h2 class="text-2xl font-bold mb-6">Gestión</h2>
-      
-      <div class="space-y-4">
-        <input id="prod-name" placeholder="Nombre del producto" class="w-full p-4 border rounded-3xl">
-        <input id="prod-price" type="number" placeholder="Precio" class="w-full p-4 border rounded-3xl">
-        <button onclick="guardarProducto()" class="w-full py-4 bg-[#3E2723] text-white rounded-3xl font-medium">Guardar Producto</button>
-      </div>
-
-      <button onclick="verVentas()" class="w-full mt-6 py-4 border border-gray-300 rounded-3xl font-medium">Ver Historial de Ventas</button>
+    <div class="bg-white rounded-3xl p-8 w-full max-w-md">
+      <h2 class="text-2xl font-bold mb-6 text-center">Agregar Producto</h2>
+      <input id="prod-name" placeholder="Nombre del producto" class="w-full p-4 border rounded-3xl mb-4">
+      <input id="prod-price" type="number" placeholder="Precio" class="w-full p-4 border rounded-3xl mb-6">
+      <button onclick="guardarProducto()" class="w-full py-4 bg-[#3E2723] text-white rounded-3xl font-medium">Guardar Producto</button>
       <button onclick="toggleAdmin()" class="w-full mt-3 py-4 text-gray-500">Cerrar</button>
     </div>
   </div>
 
-  <!-- MODAL VENTAS -->
-  <div id="ventas-modal" class="hidden fixed inset-0 bg-black/70 z-[110] flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl p-8 w-full max-w-3xl max-h-[90vh] overflow-auto">
-      <h2 class="text-2xl font-bold mb-6">Historial de Ventas</h2>
-      <div id="ventas-list" class="space-y-4"></div>
-      <button onclick="closeVentasModal()" class="mt-6 w-full py-4 border rounded-3xl">Cerrar</button>
-    </div>
-  </div>
-
   <script>
-    // === FIREBASE ===
     const firebaseConfig = {
       apiKey: "AIzaSyBzsRQKBh-_P_S8s-4n5qTPYFGbiM_T6OY",
       authDomain: "la-oficina-grupo-mandre.firebaseapp.com",
@@ -148,9 +133,9 @@
       let snap = await db.collection("tables").get();
       if (snap.empty) {
         const inicial = [
-          ...Array.from({length:6}, (_,i) => ({id:`T${i+1}`, zone:"terraza", status:"libre", total:0})),
-          ...Array.from({length:3}, (_,i) => ({id:`I${i+1}`, zone:"interior", status:"libre", total:0})),
-          ...Array.from({length:3}, (_,i) => ({id:`B${i+1}`, zone:"barra", status:"libre", total:0}))
+          ...Array.from({length:6}, (_,i) => ({id:`T${i+1}`, zone:"terraza", status:"libre", total:0, items:[]})),
+          ...Array.from({length:3}, (_,i) => ({id:`I${i+1}`, zone:"interior", status:"libre", total:0, items:[]})),
+          ...Array.from({length:3}, (_,i) => ({id:`B${i+1}`, zone:"barra", status:"libre", total:0, items:[]}))
         ];
         for (let t of inicial) await db.collection("tables").doc(t.id).set(t);
       }
@@ -164,20 +149,20 @@
     }
 
     function renderTables(tables) {
-      const zones = {terraza: document.getElementById('terraza'), interior: document.getElementById('interior'), barra: document.getElementById('barra')};
-      Object.keys(zones).forEach(z => zones[z].innerHTML = '');
-
-      tables.forEach(table => {
-        const div = document.createElement('div');
-        div.className = `mesa aspect-square rounded-3xl flex flex-col items-center justify-center cursor-pointer border-4 shadow-xl
-          ${table.status === 'libre' ? 'bg-white border-emerald-200 text-gray-700' : 'bg-red-600 text-white border-red-700'}`;
-        
-        div.innerHTML = `
-          <span class="text-5xl font-bold tracking-tighter">${table.id}</span>
-          ${table.total > 0 ? `<span class="mt-2 text-lg font-semibold">$${table.total}</span>` : '<span class="text-xs mt-2 opacity-60">Disponible</span>'}
-        `;
-        div.onclick = () => openOrderModal(table);
-        zones[table.zone].appendChild(div);
+      ["terraza","interior","barra"].forEach(zone => {
+        const cont = document.getElementById(zone);
+        cont.innerHTML = "";
+        tables.filter(t => t.zone === zone).forEach(table => {
+          const div = document.createElement('div');
+          div.className = `mesa aspect-square rounded-3xl flex flex-col items-center justify-center cursor-pointer border-4 text-center
+            ${table.status === 'libre' ? 'mesa-libre' : 'mesa-ocupada'}`;
+          div.innerHTML = `
+            <span class="text-5xl font-bold tracking-tighter">${table.id}</span>
+            ${table.total > 0 ? `<span class="text-xl font-semibold mt-2">$${table.total}</span>` : ''}
+          `;
+          div.onclick = () => openOrderModal(table);
+          cont.appendChild(div);
+        });
       });
     }
 
@@ -223,42 +208,44 @@
       if (exist) exist.cantidad++;
       else order.push({id, nombre, precio, cantidad: 1});
       renderOrder();
-      saveTableOrder();
     }
 
     function renderOrder() {
       const list = document.getElementById("order-list");
       list.innerHTML = "";
       let total = 0;
-      order.forEach((item, i) => {
+      order.forEach(item => {
         total += item.precio * item.cantidad;
         const li = document.createElement("li");
-        li.className = "bg-white p-4 rounded-3xl flex justify-between";
+        li.className = "bg-white p-4 rounded-3xl flex justify-between items-center";
         li.innerHTML = `${item.nombre} ×${item.cantidad} <span class="font-bold">$${(item.precio*item.cantidad)}</span>`;
         list.appendChild(li);
       });
       document.getElementById("total-amount").textContent = total;
     }
 
-    function saveTableOrder() {
+    window.guardarMesa = async () => {
       if (!currentTable) return;
       const total = order.reduce((a,b) => a + b.precio * b.cantidad, 0);
-      db.collection("tables").doc(currentTable.id).update({
+      await db.collection("tables").doc(currentTable.id).update({
         items: order,
         total: total,
-        status: order.length > 0 ? "ocupada" : "libre"
+        status: "ocupada"
       });
-    }
+      alert("Mesa guardada correctamente");
+      closeModal();
+      loadTables();
+    };
 
-    window.limpiarPedido = () => { order = []; renderOrder(); saveTableOrder(); };
+    window.limpiarPedido = () => { order = []; renderOrder(); };
 
     async function cerrarMesa(metodo) {
       if (order.length === 0) return alert("No hay pedido");
 
-      let extraInfo = "";
+      let cliente = "";
       if (metodo === "QR" || metodo === "Datafono") {
-        extraInfo = prompt("Nombre del cliente o ID de transacción:");
-        if (!extraInfo) return alert("Debes ingresar el nombre o ID");
+        cliente = prompt("Nombre del cliente o ID de transacción:");
+        if (!cliente) return;
       }
 
       const total = order.reduce((a,b) => a + b.precio * b.cantidad, 0);
@@ -268,11 +255,15 @@
         fecha: new Date(),
         total: total,
         metodo: metodo,
-        cliente: extraInfo || "Cliente General",
+        cliente: cliente || "Efectivo",
         items: order
       });
 
-      await db.collection("tables").doc(currentTable.id).update({ status: "libre", total: 0, items: [] });
+      await db.collection("tables").doc(currentTable.id).update({ 
+        status: "libre", 
+        total: 0, 
+        items: [] 
+      });
 
       alert(`Mesa ${currentTable.id} cerrada por ${metodo}`);
       closeModal();
@@ -286,34 +277,9 @@
     async function guardarProducto() {
       const nombre = document.getElementById("prod-name").value.trim();
       const precio = parseFloat(document.getElementById("prod-price").value);
-      if (!nombre || !precio) return alert("Completa todos los campos");
+      if (!nombre || !precio) return alert("Completa los campos");
       await db.collection("productos").add({nombre, precio});
-      alert("Producto guardado correctamente");
-    }
-
-    async function verVentas() {
-      const snap = await db.collection("ventas").orderBy("fecha", "desc").limit(30).get();
-      const list = document.getElementById("ventas-list");
-      list.innerHTML = "";
-      snap.forEach(doc => {
-        const v = doc.data();
-        const div = document.createElement("div");
-        div.className = "bg-gray-50 p-5 rounded-3xl";
-        div.innerHTML = `
-          <div class="flex justify-between">
-            <span class="font-bold">Mesa ${v.mesa}</span>
-            <span class="text-emerald-600 font-bold">$${v.total}</span>
-          </div>
-          <p class="text-xs text-gray-500">${v.fecha.toDate ? v.fecha.toDate().toLocaleString() : v.fecha}</p>
-          <p class="text-sm">${v.metodo} ${v.cliente ? '- ' + v.cliente : ''}</p>
-        `;
-        list.appendChild(div);
-      });
-      document.getElementById("ventas-modal").classList.remove("hidden");
-    }
-
-    function closeVentasModal() {
-      document.getElementById("ventas-modal").classList.add("hidden");
+      alert("Producto guardado");
     }
 
     window.onload = initTables;
